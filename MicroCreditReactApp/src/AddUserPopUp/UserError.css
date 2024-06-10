@@ -1,0 +1,17 @@
+/* 
+
+/* Parent container should use flexbox */
+.modal-header {
+  display: flex;
+  align-items: center; /* Center vertically */
+  justify-content: space-between; /* Adjust space between elements */
+}
+
+/* Error message styling */
+.header-error-message {
+  color: red; /* Or any other styling you prefer */
+  margin: 0 auto; /* Center the element horizontally */
+  flex-grow: 1; /* Allow the message to take available space */
+  display: flex;
+  justify-content: center; /* Center text horizontally */
+}

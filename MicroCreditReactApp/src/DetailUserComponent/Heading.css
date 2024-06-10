@@ -1,0 +1,10 @@
+.heading {
+  padding-top: 10px;  /* Adjust the top padding */
+  text-align: center;
+  font-weight: bold;  /* Font weight */
+  color: royalblue;  /* Text color *//
+}
+
+.Cardheading {
+    padding-top: 30px;
+}

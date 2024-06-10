@@ -1,0 +1,9 @@
+export const HTTP_PATH = "http://"
+export const LOGIN_PATH = "/microcreditUser/user/login";
+export const ADD_USER_PATH = "/microcreditUser/adduser";
+export const ADD_DETAIL_PATH = "/microcreditUser/user/details";
+export const ADD_MONEY_PATH_NAME = "/microcreditUser/user/add/money/name";
+export const GET_DETAIL_BY_NAME = "/microcreditUser/user/name";
+export const GET_DETAIL_BY_SUBNAME = "/microcreditUser/user/subName";
+export const DELETE_BY_SUBNAME = "/microcreditUser/user/subName";
+export const TOTAL_COLLECTION = "/microcreditUser/today/collections";
