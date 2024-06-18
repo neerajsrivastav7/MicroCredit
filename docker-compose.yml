@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  microcredit:
+    container_name: microcredit_backend
+    image: microcredit_plus:3.0.1
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=microcredit
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+      - FRONTEND_HOST=10.10.26.206
+
+  postgres:
+    container_name: microcredit_postgres
+    image: postgres
+    environment:
+      - POSTGRES_DB=microcredit
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+    ports:
+      - "5432:5432"
+
+  reactapp:
+    container_name: microcredit_frontend
+    image: microcredit_frontend:1.1
+    ports:
+      - "5173:5173"
+    depends_on:
+      - microcredit
+    environment:
+      - REACT_APP_API_URL=http://10.10.26.206:5173
+      - BACKEND_HOST=10.10.26.206
+
