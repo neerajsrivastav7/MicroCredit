@@ -135,5 +135,8 @@ const (
                                 FROM detail
                                 GROUP BY name
                                 ORDER BY TotalDailyPaidAmount DESC;`
+
+        updateCurrentDateForAllUser = ` UPDATE detail SET 
+                                CurrentEndDate = CURRENT_DATE + INTERVAL '1 day' * noOfRemainingDay;`
                                         
 )

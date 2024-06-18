@@ -1,0 +1,6 @@
+{
+    "HostName": "127.0.0.1",
+    "Port": "8081",
+    "FrontEndHost": "10.10.26.206",
+    "FrontEndPORT": "5173"
+}

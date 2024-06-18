@@ -7,9 +7,10 @@ import (
     "microCreditplus/pkg/database"
     "sync"
     "time"
+    "os"
+    "microCreditplus/pkg/loghistory"
 )
 
-// Global variables
 var (
     totalCollection sync.RWMutex
     Collection      map[string]*comman.TodayCollection
@@ -19,12 +20,16 @@ type Losic struct {
     lc database.Database
 }
 
-func (l *Losic)LoadNewCollection() {
+var LogicLoger = loghistory.New(os.Stdout, loghistory.INFO)
+
+func (l *Losic) LoadNewCollection() {
     totalCollection.Lock()
     defer totalCollection.Unlock()
+
     newCollection, err := l.lc.TodayCollection()
     if err != nil {
-        fmt.Println("There is issue in Loading the Data")
+        LogicLoger.Error("Error loading today's collection: %v", err)
+        return
     }
     if Collection == nil {
         Collection = make(map[string]*comman.TodayCollection)
@@ -35,9 +40,10 @@ func (l *Losic)LoadNewCollection() {
         todayCollection.Paid = 0
         Collection[value.Name] = todayCollection
     }
+    LogicLoger.Info("New collection loaded successfully")
 }
 
-func (l *Losic)StartDailyCleanup() {
+func (l *Losic) StartDailyCleanup() {
     go func() {
         for {
             now := time.Now()
@@ -47,12 +53,14 @@ func (l *Losic)StartDailyCleanup() {
             }
             durationUntilNextCleanup := nextCleanup.Sub(now)
 
+            LogicLoger.Info("Next cleanup scheduled in %v", durationUntilNextCleanup)
             time.Sleep(durationUntilNextCleanup)
 
             totalCollection.Lock()
             Collection = make(map[string]*comman.TodayCollection)
             totalCollection.Unlock()
             l.LoadNewCollection()
+            LogicLoger.Info("Daily cleanup completed and new collection loaded")
         }
     }()
 }
@@ -60,36 +68,46 @@ func (l *Losic)StartDailyCleanup() {
 func (l *Losic) Start() {
     l.LoadNewCollection()
     l.StartDailyCleanup()
+    LogicLoger.Info("Service started successfully")
 }
 
-func AddInTotalCollection(name string, addedMoney int) {
+func (l *Losic) AddInTotalCollection(name string, addedMoney int) {
     totalCollection.Lock()
     defer totalCollection.Unlock()
-	fmt.Println("+++++++++++++++++++++++++++++++++")
-	fmt.Println(name)
+
     if collection, ok := Collection[name]; ok {
-		fmt.Println(name)
         collection.Paid += addedMoney
+        LogicLoger.Info("Added %d to %s's total collection", addedMoney, name)
+    } else {
+        l.LoadNewCollection()
+        Collection[name] = &comman.TodayCollection{Paid: addedMoney}
+        LogicLoger.Info("New collection initialized for %s with %d", name, addedMoney)
     }
-	fmt.Println(Collection)
+
+    fmt.Println(Collection)
 }
 
 func (l *Losic) AddUserLosicHandler(user comman.User) error {
     amoutDetail, userinfo, userDetail, err := comman.DitributeData(user)
     if err != nil {
+        LogicLoger.Error("Error distributing user data: %v", err)
         return err
     }
 
     if err = l.lc.InsertUserInfo(userinfo); err != nil {
+        LogicLoger.Error("Error inserting user info: %v", err)
         return err
     }
     if err = l.lc.InsertAmount(amoutDetail); err != nil {
+        LogicLoger.Error("Error inserting amount: %v", err)
         return err
     }
     if err = l.lc.InsertDetails(userDetail); err != nil {
+        LogicLoger.Error("Error inserting user details: %v", err)
         return err
     }
 
+    LogicLoger.Info("User added successfully: %s", userinfo.Name)
     return nil
 }
 
@@ -100,8 +118,10 @@ func (l *Losic) deleteUserHandlerLosic(user comman.DeleteUser) error {
     subName := user.SubName
     err := l.lc.DeleteUser(subName)
     if err != nil {
+        LogicLoger.Error("Error deleting user: %v", err)
         return errors.New(err.Error())
     }
+    LogicLoger.Info("User deleted successfully: %s", subName)
     return nil
 }
 
@@ -110,21 +130,29 @@ func (l *Losic) AddMoneyLosicHandler(addMoney comman.AddMoney) error {
     remainingAmount := day * (addMoney.PaidAmount)
     addMoneyError := l.lc.AddMoneyQuery(day, remainingAmount, addMoney.SubName)
     if addMoneyError != nil {
+        LogicLoger.Error("Error adding money: %v", addMoneyError)
         return addMoneyError
     }
     go func() {
-        AddInTotalCollection(addMoney.SubName, addMoney.PaidAmount)
+        l.AddInTotalCollection(addMoney.SubName, addMoney.PaidAmount)
     }()
+    LogicLoger.Info("Money added successfully for user: %s", addMoney.SubName)
     return nil
 }
 
 func (l *Losic) GetAllUserLogisHandler() ([]comman.SettlementData, error) {
     users, err := l.lc.GetAllData()
+    if err != nil {
+        LogicLoger.Error("Error getting all user data: %v", err)
+    }
     return users, err
 }
 
 func (l *Losic) GetAllUserLogisHandlerByName(name string) ([]comman.SubNameDetail, error) {
     users, err := l.lc.GetSubNameDetailByName(name)
+    if err != nil {
+        LogicLoger.Error("Error getting user data by name: %v", err)
+    }
     return users, err
 }
 
@@ -141,10 +169,15 @@ func (l *Losic) TodayCollectionLosicHandler() (interface{}, error) {
         result = append(result, *col)
     }
 
+    LogicLoger.Info("Today's collection retrieved successfully")
     return result, nil
 }
+
 func (l *Losic) GetDetailHandler() (interface{}, error) {
     details, err := l.lc.GetDetailData()
+    if err != nil {
+        LogicLoger.Error("Error getting detail data: %v", err)
+    }
     if len(details) == 0 {
         details = []comman.UserDetails{
             {
@@ -154,6 +187,7 @@ func (l *Losic) GetDetailHandler() (interface{}, error) {
                 NextPaidDate:         "2024-05-30",
             },
         }
+        LogicLoger.Info("No details found, returning dummy data")
     }
     return details, err
 }
@@ -164,32 +198,45 @@ func (l *Losic) AddMoneyByNameLosicHandler(addMoney comman.AddMoneyByName) error
     noofDays := addMoney.NoOfDays
     TotalPaidAmount := addMoney.TotalPaidAmount
     moneyType := addMoney.MType
-    fmt.Println(name)
-    fmt.Println(subName)
     var err error
-	AddInTotalCollection(name, TotalPaidAmount)
+    l.AddInTotalCollection(name, TotalPaidAmount)
     if moneyType == "name" {
         err = l.lc.AddMoneyByName(name, noofDays, TotalPaidAmount)
     } else if moneyType == "subName" {
         err = l.lc.AddMoneyBySubName(subName, noofDays, TotalPaidAmount)
     } else {
         err = errors.New("type of Add money is not Valid")
+        LogicLoger.Error("Invalid money type provided: %s", moneyType)
+    }
+    if err != nil {
+        LogicLoger.Error("Error adding money by name or subName: %v", err)
     }
     return err
 }
 
 func (l *Losic) GetDetailLosicHandler(name string) (interface{}, error) {
     detail, err := l.lc.GetDetailByName(name)
+    if err != nil {
+        LogicLoger.Error("Error getting detail by name: %v", err)
+    }
     return detail, err
 }
 
 func (l *Losic) GetDetailLosicHandlerForSubName(subname string) (interface{}, error) {
     detail, err := l.lc.GetDetailBySubName(subname)
+    if err != nil {
+        LogicLoger.Error("Error getting detail for subName: %v", err)
+    }
     fmt.Println(detail)
     return detail, err
 }
 
 func (l *Losic) DeleteUserHandlerLosic(subName string) error {
     err := l.lc.DeleteUserBySubName(subName)
+    if err != nil {
+        LogicLoger.Error("Error deleting user by subName: %v", err)
+    } else {
+        LogicLoger.Info("User deleted successfully by subName: %s", subName)
+    }
     return err
 }

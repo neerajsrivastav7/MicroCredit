@@ -8,6 +8,8 @@ import (
 	"microCreditplus/pkg/comman"
 	"strings"
 	"sync"
+    "os"
+    "microCreditplus/pkg/loghistory"
 
 	_ "github.com/lib/pq"
 )
@@ -18,48 +20,67 @@ type Database struct {
 }
 
 const (
-	connStr      = "postgres://postgres:root@localhost:5432/postgres?sslmode=disable"
-	connStrMicro = "postgres://postgres:root@localhost:5433/microcredit?sslmode=disable"
+	connStr      = "postgres://postgres:root@microcredit_postgres:5432/postgres?sslmode=disable"
+	connStrMicro = "postgres://postgres:root@microcredit_postgres:5432/microcredit?sslmode=disable"
 	dbName       = "microCreditplus"
 )
+
+var dataBaseLogger = loghistory.New(os.Stdout, loghistory.INFO)
+func (pdb *Database)UpdateCurrentEndDate() error{
+	db, err := pdb.ConnectToDB()
+	if err != nil {
+		dataBaseLogger.Error("Database is not connected with the Database [%s]", err.Error())
+		return err
+	}
+	defer db.Close()
+	dataBaseLogger.Info("Update Current Date and time in the database for all user")
+    _, errQuery := db.Exec(updateCurrentDateForAllUser)
+    if errQuery != nil {
+        return errQuery
+    }
+    dataBaseLogger.Info("CurrentEndDate updated successfully")
+	return nil
+}
 
 func (pdb *Database) CreateDatabase() {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal("Error connecting to the database:", err)
+		dataBaseLogger.Error("Error connecting to the database:[%s]", err)
 	}
 	defer db.Close()
 
 	var exists bool
 	err = db.QueryRow("SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)", dbName).Scan(&exists)
 	if err != nil {
-		log.Fatal("Error checking if database exists:", err)
+		dataBaseLogger.Error("Error checking if database exists: [%s]", err.Error())
 	}
 
 	if exists {
-		fmt.Printf("Database '%s' already exists. Skipping creation.\n", dbName)
+		dataBaseLogger.Error("Database '%s' already exists. Skipping creation.\n", dbName)
 		return
 	}
 
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName))
 	if err != nil {
-		log.Fatal("Error creating database:", err)
+		dataBaseLogger.Error("Error creating database :[%s]", err.Error())
 	}
 
-	fmt.Printf("Database '%s' created successfully\n", dbName)
+	dataBaseLogger.Info("Database '%s' created successfully\n", dbName)
 }
 
 func (pdb *Database) ConnectToDB() (*sql.DB, error) {
 	db, err := sql.Open("postgres", connStrMicro)
 	if err != nil {
+		dataBaseLogger.Error("error connecting to the database: %v",err.Error())
 		return nil, fmt.Errorf("error connecting to the database: %v", err)
 	}
-
 	err = db.Ping()
 	if err != nil {
 		db.Close()
+		dataBaseLogger.Error("error pinging database: %v", err)
 		return nil, fmt.Errorf("error pinging database: %v", err)
 	}
+	dataBaseLogger.Info("Database connnected Succesfully")
 	return db, nil
 }
 
@@ -69,6 +90,7 @@ func (pdb *Database) createTable(query, tableName string) error {
 
 	db, err := pdb.ConnectToDB()
 	if err != nil {
+		dataBaseLogger.Error("Not able to connect with the database")
 		return errors.New("not able to connect with the database")
 	}
 	defer db.Close()
@@ -76,10 +98,11 @@ func (pdb *Database) createTable(query, tableName string) error {
 	_, err = db.Exec(query)
 	if err != nil {
 		log.Fatalf("Error creating %s table: %v", tableName, err)
+		dataBaseLogger.Error("Error creating %s table: %v", tableName, err)
 		return errors.New("not able to create table")
 	}
 
-	fmt.Printf("%s Table Created\n", tableName)
+	dataBaseLogger.Info("%s Table Created\n", tableName)
 	return nil
 }
 
@@ -101,14 +124,17 @@ func (pdb *Database) insertData(query string, args ...interface{}) error {
 
 	db, err := pdb.ConnectToDB()
 	if err != nil {
+		dataBaseLogger.Error("not able to connect with the database")
 		return errors.New("not able to connect with the database")
 	}
 	defer db.Close()
 
 	_, err = db.Exec(query, args...)
 	if err != nil {
+		dataBaseLogger.Error("unable to insert data: %v", err)
 		return fmt.Errorf("unable to insert data: %v", err)
 	}
+	dataBaseLogger.Info("Data Insurted SuccessFully")
 	return nil
 }
 
@@ -263,24 +289,28 @@ func (pdb *Database) GetDetailData() ([]comman.UserDetails, error) {
 
 
 func (pdb *Database) AddMoneyBySubName(name string, noofDays, TotalPaidAmount int) error {
+	dataBaseLogger.Info("Add money for Name %s", name)
+
 	db, err := pdb.ConnectToDB()
 	if err != nil {
+		dataBaseLogger.Error("Not able to Connect with the data Base")
 		return err
 	}
 	defer db.Close()
-	fmt.Println(name)
+	dataBaseLogger.Info("Updated Table to add Money")
 	_, err = db.Exec(addMoneyBySubNameQuery, noofDays, name)
 	if err != nil {
 		return err
 	}
-
+	dataBaseLogger.Info("Update Remainimg amount for Sdding Money")
 	_, err = db.Exec(addMoneyBySubName2Query, name)
 	if err != nil {
 		return fmt.Errorf("error executing the update query: %v", err)
 	}
-
+	dataBaseLogger.Info("Money Added")
 	return nil
 }
+
 
 func (pdb *Database) AddMoneyByName(name string, noofDays, TotalPaidAmount int) error {
 	db, err := pdb.ConnectToDB()
@@ -293,12 +323,10 @@ func (pdb *Database) AddMoneyByName(name string, noofDays, TotalPaidAmount int) 
 	if err != nil {
 		return err
 	}
-
 	_, err = db.Exec(addMoneyByName2Query, name)
 	if err != nil {
 		return fmt.Errorf("error executing the update query: %v", err)
 	}
-
 	return nil
 }
 
