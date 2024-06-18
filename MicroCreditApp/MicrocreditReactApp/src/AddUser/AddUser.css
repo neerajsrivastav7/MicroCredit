@@ -1,0 +1,53 @@
+.container_new {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-container_new {
+  background: #cddae7;
+  padding: 20px;
+  border-radius: 10px;
+  position: relative;
+  height: 600px; /* Adjust the height as needed */
+  overflow-y: auto;
+}
+
+.form-header_new {
+  position: sticky;
+  top: 0;
+  background-color: #007bff;
+  padding: 10px;
+  z-index: 1;
+}
+
+.message {
+  position: sticky;
+  top: 50px;
+  background-color: #ffcccb;
+  color: #000;
+  padding: 10px;
+  z-index: 1;
+}
+
+.form-group_new {
+  margin-bottom: 15px;
+}
+
+.form-control_new {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+}
+
+
+
+.btn-primary_new {
+  background-color: #28a745;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #218838;
+}

@@ -1,0 +1,37 @@
+.custom-card-header {
+  background-color: #007bff; /* Change this to your desired color */
+  color: #e62525; /* Optional: Change text color if needed */
+}
+
+.button-group {
+  display: flex;
+  gap: 10px; /* Space between the buttons */
+}
+
+
+/* Card.css */
+.cardByName {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-header {
+  background-color: #e0e4e6;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 15px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.cardBodyByName{
+  padding: 15px;
+}
+
+.card-text {
+  margin: 10px 0;
+  font-size: 0.95rem;
+}
+

@@ -1,0 +1,9 @@
+.custom-card-header {
+  background-color: #007bff; /* Change this to your desired color */
+  color: #e62525; /* Optional: Change text color if needed */
+}
+
+.button-group {
+  display: flex;
+  gap: 10px; /* Space between the buttons */
+}

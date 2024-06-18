@@ -1,0 +1,27 @@
+/* FooterRoot.css */
+
+.footer {
+  background-color: #007bff; /* Change this to your desired background color */
+  color: white; /* Change this to your desired text color */
+}
+
+.footer a {
+  color: white; /* Change this to your desired link color */
+}
+
+.footer a:hover {
+  color: #ffcc00; /* Change this to your desired hover link color */
+}
+
+.footer .list-unstyled li {
+  margin-bottom: 10px;
+}
+
+.footer .fab {
+  margin-right: 10px;
+  transition: color 0.3s ease;
+}
+
+.footer .fab:hover {
+  color: #ffcc00; /* Change this to your desired hover icon color */
+}

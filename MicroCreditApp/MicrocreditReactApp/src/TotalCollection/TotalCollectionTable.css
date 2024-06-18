@@ -1,0 +1,17 @@
+.status-true {
+  color: green;
+  font-weight: bold;
+}
+.status-false {
+  color: red;
+  font-weight: bold;
+}
+.table-responsive {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 500px; /* Adjust based on desired table height */
+}
+.highlight {
+  font-weight: bold;
+  background-color: #f8f9fa;
+}
