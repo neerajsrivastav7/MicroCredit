@@ -4,7 +4,7 @@ import MoneyPopFooter from "./MoneyPopUpFooter";
 import MoneyPopUpHeader from "./MoneyPopUpHeader";
 import MoneyPopUpModelBody from "./MoneyPopUpModelBody";
 import { ConvertAddMoneyDataToJson } from "../Common/JsonConverter";
-import {HandleAddMoney} from "../server/ServerPatch"
+import {HandleAddMoney,HandleTodayCollection} from "../server/ServerPatch"
 import { useNavigate } from "react-router-dom";
 
 function AddMoneyModal({
@@ -55,6 +55,8 @@ function AddMoneyModal({
       const response = await HandleAddMoney(e, JsonData);
       console.log(response)
       if (response.status === 201) {
+        const response = await HandleTodayCollection(e, JsonData)
+        console.log(response)
         window.location.reload();
       } else {
         setFormData(initialFormData);
@@ -110,3 +112,4 @@ function AddMoneyModal({
 }
 
 export default AddMoneyModal;
+

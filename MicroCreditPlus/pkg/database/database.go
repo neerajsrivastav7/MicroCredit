@@ -20,6 +20,7 @@ type Database struct {
 }
 
 const (
+	//microcredit_postgres
 	connStr      = "postgres://postgres:root@microcredit_postgres:5432/postgres?sslmode=disable"
 	connStrMicro = "postgres://postgres:root@microcredit_postgres:5432/microcredit?sslmode=disable"
 	dbName       = "microCreditplus"
@@ -287,7 +288,7 @@ func (pdb *Database) GetDetailData() ([]comman.UserDetails, error) {
 	return details, nil
 }
 
-
+/*
 func (pdb *Database) AddMoneyBySubName(name string, noofDays, TotalPaidAmount int) error {
 	dataBaseLogger.Info("Add money for Name %s", name)
 
@@ -309,10 +310,67 @@ func (pdb *Database) AddMoneyBySubName(name string, noofDays, TotalPaidAmount in
 	}
 	dataBaseLogger.Info("Money Added")
 	return nil
+}*/
+
+func (pdb *Database) AddMoneyBySubName(name string, noofDays, totalPaidAmount int) error {
+    dataBaseLogger.Info("Add money for SubName %s", name)
+
+    // Validate inputs
+    if name == "" {
+        return fmt.Errorf("subName cannot be empty")
+    }
+    if noofDays <= 0 {
+        return fmt.Errorf("noofDays must be greater than zero")
+    }
+    if totalPaidAmount <= 0 {
+        return fmt.Errorf("totalPaidAmount must be greater than zero")
+    }
+
+    db, err := pdb.ConnectToDB()
+    if err != nil {
+        dataBaseLogger.Error("Not able to connect with the database: %v", err)
+        return err
+    }
+    defer db.Close()
+
+    // Start a transaction
+    tx, err := db.Begin()
+    if err != nil {
+        dataBaseLogger.Error("Failed to begin transaction: %v", err)
+        return fmt.Errorf("failed to begin transaction: %v", err)
+    }
+
+    // First query execution
+    _, err = tx.Exec(addMoneyBySubNameQuery, noofDays, name)
+    if err != nil {
+        tx.Rollback()
+        dataBaseLogger.Error("Error executing addMoneyBySubNameQuery: %v", err)
+        return fmt.Errorf("error executing addMoneyBySubNameQuery: %v", err)
+    }
+    dataBaseLogger.Info("Updated table to add money")
+
+    // Second query execution
+    _, err = tx.Exec(addMoneyBySubName2Query, name)
+    if err != nil {
+        tx.Rollback()
+        dataBaseLogger.Error("Error executing addMoneyBySubName2Query: %v", err)
+        return fmt.Errorf("error executing addMoneyBySubName2Query: %v", err)
+    }
+    dataBaseLogger.Info("Updated remaining amount for adding money")
+
+    // Commit transaction
+    if err := tx.Commit(); err != nil {
+        dataBaseLogger.Error("Failed to commit transaction: %v", err)
+        return fmt.Errorf("failed to commit transaction: %v", err)
+    }
+
+    dataBaseLogger.Info("Money added successfully for subName: %s", name)
+    return nil
 }
 
 
-func (pdb *Database) AddMoneyByName(name string, noofDays, TotalPaidAmount int) error {
+
+/*func (pdb *Database) AddMoneyByName(name string, noofDays, TotalPaidAmount int) error {
 	db, err := pdb.ConnectToDB()
 	if err != nil {
 		return err
@@ -328,6 +386,53 @@ func (pdb *Database) AddMoneyByName(name string, noofDays, TotalPaidAmount int) 
 		return fmt.Errorf("error executing the update query: %v", err)
 	}
 	return nil
+}*/
+
+func (pdb *Database) AddMoneyByName(name string, noofDays, TotalPaidAmount int) error {
+    // Validate inputs
+    if name == "" {
+        return fmt.Errorf("name cannot be empty")
+    }
+    if noofDays <= 0 {
+        return fmt.Errorf("noofDays must be greater than zero")
+    }
+    if TotalPaidAmount <= 0 {
+        return fmt.Errorf("TotalPaidAmount must be greater than zero")
+    }
+
+    db, err := pdb.ConnectToDB()
+    if err != nil {
+        return err
+    }
+    defer db.Close()
+
+    // Start a transaction
+    tx, err := db.Begin()
+    if err != nil {
+        return fmt.Errorf("failed to begin transaction: %v", err)
+    }
+
+    // First query execution
+    _, err = tx.Exec(addMoneyByNameQuery, noofDays, name)
+    if err != nil {
+        tx.Rollback()
+        return fmt.Errorf("error executing addMoneyByNameQuery: %v", err)
+    }
+
+    // Second query execution
+    _, err = tx.Exec(addMoneyByName2Query, name)
+    if err != nil {
+        tx.Rollback()
+        return fmt.Errorf("error executing addMoneyByName2Query: %v", err)
+    }
+
+    // Commit transaction
+    if err := tx.Commit(); err != nil {
+        return fmt.Errorf("failed to commit transaction: %v", err)
+    }
+
+    log.Printf("Money successfully added for user: %s", name)
+    return nil
 }
 
 func (pdb *Database) GetDetailByName(name string) ([]comman.GetDetailByName,error) {

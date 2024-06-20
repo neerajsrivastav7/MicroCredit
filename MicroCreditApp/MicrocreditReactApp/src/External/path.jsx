@@ -8,7 +8,8 @@ import {
   GET_DETAIL_BY_NAME,
   GET_DETAIL_BY_SUBNAME,
   DELETE_BY_SUBNAME,
-  TOTAL_COLLECTION
+  TOTAL_COLLECTION,
+  ADD_TODAY_COLLECTION
 } from "./contstant";
 export function LoginPath() {
     return HTTP_PATH+Jsonata.Host+":"+Jsonata.Port+LOGIN_PATH
@@ -48,3 +49,9 @@ export function TotalCollectionPath() {
   var path = `${HTTP_PATH}${Jsonata.Host}:${Jsonata.Port}${TOTAL_COLLECTION}`;
   return path
 }
+
+export function PathToAddTodayCollection() {
+  var path = `${HTTP_PATH}${Jsonata.Host}:${Jsonata.Port}${ADD_TODAY_COLLECTION}`;
+  return path;
+}
+

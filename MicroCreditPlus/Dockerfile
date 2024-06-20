@@ -21,7 +21,7 @@ COPY config.json .
 RUN go build -o cmd/app cmd/main.go
 
 # Expose the port on which your Go application will run
-EXPOSE 8080
+EXPOSE 8081
 
 # Command to run the executable
 CMD ["./cmd/app"]

@@ -66,10 +66,10 @@ func main() {
     FrontEndPort := viper.GetString("FrontEndPORT")
     var restHandler restAPI
     router := gin.Default()
-
     // Configure CORS middleware
-    router.Use(cors.New(cors.Config{
-        AllowOrigins:     []string{"http://"+FrontEndHost+":"+FrontEndPort}, 
+    url := "http://"+FrontEndHost+":"+FrontEndPort
+    router.Use(cors.New(cors.Config{  
+        AllowOrigins:     []string{url}, 
         AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
         AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
         ExposeHeaders:    []string{"Content-Length"},
@@ -83,6 +83,7 @@ func main() {
     usergroup.POST("/user/login", restHandler.hn.LoginUser)
     usergroup.PATCH("/user/add/money/subname", restHandler.hn.AddMoney)
     usergroup.PATCH("/user/add/money/name", restHandler.hn.AddMoneyByName)
+    usergroup.PATCH("/user/add/totalCollection", restHandler.hn.AddTotalCollection)
     usergroup.GET("/user/", restHandler.hn.GetAllUser)
     usergroup.GET("/user", restHandler.hn.GetAllUser)
     usergroup.GET("/user/:name", restHandler.hn.GetUserByName)
@@ -92,6 +93,7 @@ func main() {
     usergroup.GET("/user/subName/:subName", restHandler.hn.GetDetailBySubName)
     usergroup.DELETE("/user/subName/:subName",restHandler.hn.DeleteUserBySubName)
     router.Run(":"+HostPort)
+    //router.Run(":8082")
 }
 
 func scheduleDailyTask(r *restAPI) {
@@ -109,3 +111,4 @@ func scheduleDailyTask(r *restAPI) {
         scheduleDailyTask(r)
     }()
 }
+

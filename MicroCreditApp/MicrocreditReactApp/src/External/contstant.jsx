@@ -7,3 +7,4 @@ export const GET_DETAIL_BY_NAME = "/microcreditUser/user/name";
 export const GET_DETAIL_BY_SUBNAME = "/microcreditUser/user/subName";
 export const DELETE_BY_SUBNAME = "/microcreditUser/user/subName";
 export const TOTAL_COLLECTION = "/microcreditUser/today/collections";
+export const ADD_TODAY_COLLECTION = "/microcreditUser/user/add/totalCollection";

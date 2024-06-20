@@ -139,23 +139,54 @@ func (h *Handler) GetDetails(c *gin.Context) {
 	c.JSON(http.StatusOK, details)
 }
 
+// func (h *Handler) AddMoneyByName(c *gin.Context) {
+// 	addMoneyByName := comman.AddMoneyByName{}
+// 	if err := c.BindJSON(&addMoneyByName); err != nil {
+// 		log.Error("Failed to bind add money by name JSON: %v", err)
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	log.Info("Received Data To Add Money By Name: %+v", addMoneyByName)
+// 	err := h.l.AddMoneyByNameLosicHandler(addMoneyByName)
+// 	if err != nil {
+// 		log.Error("Some issue While Adding Money By Name: %v", err)
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	log.Info("Money Added for user: %s", addMoneyByName.Name)
+// 	c.JSON(http.StatusCreated, "Money Added")
+// }
+
 func (h *Handler) AddMoneyByName(c *gin.Context) {
-	addMoneyByName := comman.AddMoneyByName{}
-	if err := c.BindJSON(&addMoneyByName); err != nil {
-		log.Error("Failed to bind add money by name JSON: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	log.Info("Received Data To Add Money By Name: %+v", addMoneyByName)
-	err := h.l.AddMoneyByNameLosicHandler(addMoneyByName)
-	if err != nil {
-		log.Error("Some issue While Adding Money By Name: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	log.Info("Money Added for user: %s", addMoneyByName.Name)
-	c.JSON(http.StatusCreated, "Money Added")
+    var addMoneyByName comman.AddMoneyByName
+    if err := c.BindJSON(&addMoneyByName); err != nil {
+        log.Error("Failed to bind add money by name JSON: %v", err)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+        return
+    }
+
+    log.Info("Received Data To Add Money By Name: %+v", addMoneyByName)
+
+    // Validate the input
+    if addMoneyByName.Name == "" || addMoneyByName.TotalPaidAmount <= 0 {
+        log.Error("Invalid request data: %+v", addMoneyByName)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid name or amount"})
+        return
+    }
+
+    // Process the request
+    err := h.l.AddMoneyByNameLosicHandler(addMoneyByName)
+    if err != nil {
+        log.Error("Error adding money for user %s: %v", addMoneyByName.Name, err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add money"})
+        return
+    }
+
+    log.Info("Money added for user: %s", addMoneyByName.Name)
+    c.JSON(http.StatusCreated, gin.H{"message": "Money added successfully"})
+	
 }
+
 
 func (h *Handler) GetDetailByName(c *gin.Context) {
 	name := c.Param("name")
@@ -194,4 +225,25 @@ func (h *Handler) DeleteUserBySubName(c *gin.Context) {
 	}
 	log.Info("User Deleted By SubName: %s", subName)
 	c.JSON(http.StatusOK, gin.H{"Status": "User Deleted"})
+}
+
+func (h *Handler)AddTotalCollection(c *gin.Context) {
+    var AddTodayCollection  comman.AddMoneyByName
+    if err := c.BindJSON(&AddTodayCollection); err != nil {
+        log.Error("Failed to bind add money by name JSON: %v", err)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+        return
+    }
+    // Validate the input
+    if AddTodayCollection.Name == "" || AddTodayCollection.TotalPaidAmount <= 0 {
+        log.Error("Invalid request data: %+v", AddTodayCollection)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid name or amount"})
+        return
+    }
+	err :=h.l.AddInTotalCollection(AddTodayCollection.Name, AddTodayCollection.TotalPaidAmount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "collection Added"})
 }

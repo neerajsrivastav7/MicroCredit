@@ -71,20 +71,21 @@ func (l *Losic) Start() {
     LogicLoger.Info("Service started successfully")
 }
 
-func (l *Losic) AddInTotalCollection(name string, addedMoney int) {
+func (l *Losic) AddInTotalCollection(name string, addedMoney int) error{
     totalCollection.Lock()
-    defer totalCollection.Unlock()
-
     if collection, ok := Collection[name]; ok {
         collection.Paid += addedMoney
         LogicLoger.Info("Added %d to %s's total collection", addedMoney, name)
+	totalCollection.Unlock()
     } else {
+	totalCollection.Unlock()
         l.LoadNewCollection()
+	totalCollection.Lock()
         Collection[name] = &comman.TodayCollection{Paid: addedMoney}
+	totalCollection.Unlock()
         LogicLoger.Info("New collection initialized for %s with %d", name, addedMoney)
     }
-
-    fmt.Println(Collection)
+    return nil
 }
 
 func (l *Losic) AddUserLosicHandler(user comman.User) error {
@@ -134,7 +135,7 @@ func (l *Losic) AddMoneyLosicHandler(addMoney comman.AddMoney) error {
         return addMoneyError
     }
     go func() {
-        l.AddInTotalCollection(addMoney.SubName, addMoney.PaidAmount)
+        _ = l.AddInTotalCollection(addMoney.SubName, addMoney.PaidAmount)
     }()
     LogicLoger.Info("Money added successfully for user: %s", addMoney.SubName)
     return nil
@@ -195,24 +196,50 @@ func (l *Losic) GetDetailHandler() (interface{}, error) {
 func (l *Losic) AddMoneyByNameLosicHandler(addMoney comman.AddMoneyByName) error {
     name := addMoney.Name
     subName := addMoney.SubName
-    noofDays := addMoney.NoOfDays
-    TotalPaidAmount := addMoney.TotalPaidAmount
+    noOfDays := addMoney.NoOfDays
+    totalPaidAmount := addMoney.TotalPaidAmount
     moneyType := addMoney.MType
-    var err error
-    l.AddInTotalCollection(name, TotalPaidAmount)
-    if moneyType == "name" {
-        err = l.lc.AddMoneyByName(name, noofDays, TotalPaidAmount)
-    } else if moneyType == "subName" {
-        err = l.lc.AddMoneyBySubName(subName, noofDays, TotalPaidAmount)
-    } else {
-        err = errors.New("type of Add money is not Valid")
-        LogicLoger.Error("Invalid money type provided: %s", moneyType)
+
+    // Validate input data
+    if name == "" && subName == "" {
+        err := errors.New("name or subName must be provided")
+        LogicLoger.Error("Invalid input data: %v", err)
+        return err
     }
+    if totalPaidAmount <= 0 {
+        err := errors.New("totalPaidAmount must be greater than zero")
+        LogicLoger.Error("Invalid totalPaidAmount: %v", err)
+        return err
+    }
+    if moneyType != "name" && moneyType != "subName" {
+        err := errors.New("type of Add money is not valid")
+        LogicLoger.Error("Invalid money type provided: %s", moneyType)
+        return err
+    }
+
+    // Log input data
+    LogicLoger.Info("Adding money with details: Name=%s, SubName=%s, NoOfDays=%d, TotalPaidAmount=%f, MType=%s",
+        name, subName, noOfDays, totalPaidAmount, moneyType)
+
+    // Add to total collection
+
+    // Add money by name or subName
+    var err error
+    if moneyType == "name" {
+        err = l.lc.AddMoneyByName(name, noOfDays, totalPaidAmount)
+    } else if moneyType == "subName" {
+        err = l.lc.AddMoneyBySubName(subName, noOfDays, totalPaidAmount)
+    }
+    
     if err != nil {
         LogicLoger.Error("Error adding money by name or subName: %v", err)
+        return err
     }
-    return err
+
+    LogicLoger.Info("Successfully added money for %s", name)
+    return nil
 }
+
 
 func (l *Losic) GetDetailLosicHandler(name string) (interface{}, error) {
     detail, err := l.lc.GetDetailByName(name)
@@ -240,3 +267,4 @@ func (l *Losic) DeleteUserHandlerLosic(subName string) error {
     }
     return err
 }
+
